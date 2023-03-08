@@ -1,11 +1,6 @@
 from pandas_ods_reader import read_ods
-import os
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
-
-
-def clear_viewport():
-    os.system('cls')
 
 
 def read_verbs():
@@ -17,15 +12,22 @@ def read_verbs():
 
 def main():
     df = read_verbs()
+    df = df.sample(frac=1).reset_index(drop=True)  # random order
 
     prefix = input("Enter prefix verbs: ")
 
+    total, fail = 0, 0
+
     for index, row in df.iterrows():
         if not prefix or row.verb.startswith(prefix):
-            clear_viewport()
-            input(f"{row.verb} ?")
+            total += 1
+            input(f"{row.verb} ? ")
             print(f"    {row.translation}")
-            input()
+            known = input()
+            if known != '':  # user hit Enter
+                fail += 1
+
+    print(f"Pass={total-fail}, Fail={fail} (Total {total})")
 
 
 if __name__ == '__main__':

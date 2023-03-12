@@ -34,7 +34,7 @@ def append_stats_to_file(word, result):
 
 def read_stats_from_file():
     stats = defaultdict(list)
-    with open(STATS_STORE) as f:
+    with open(STATS_STORE, encoding='utf-8') as f:
         stats_reader = csv.reader(f)
         for row in stats_reader:
             stats[row[0]].append(row[2])

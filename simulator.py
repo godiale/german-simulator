@@ -2,6 +2,7 @@ from pandas_ods_reader import read_ods
 from collections import defaultdict
 import random
 import datetime
+import csv
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
@@ -25,11 +26,19 @@ def read_verbs_from_file():
 
 
 def append_stats_to_file(word, result):
-    #
     timestamp = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
     result_str = '1' if result else '0'
     with open(STATS_STORE, "a", encoding='utf-8') as f:
         f.write(f'"{word}","{timestamp}","{result_str}"\n')
+
+
+def read_stats_from_file():
+    stats = defaultdict(list)
+    with open(STATS_STORE) as f:
+        stats_reader = csv.reader(f)
+        for row in stats_reader:
+            stats[row[0]].append(row[2])
+    return stats
 
 
 def create_exercise(df):
@@ -69,10 +78,13 @@ def main():
     df = read_verbs_from_file()
     df = create_exercise(df)
 
+    stats = read_stats_from_file()
+
     fail = 0
 
     for index, row in df.iterrows():
-        input(f"{row.verb} ? ")
+        stat = ''.join(stats[row.verb]).replace('1', '+').replace('0', '-')[:5]
+        input(f"{row.verb} ({stat})? ")
         print(f"    {row.translation}")
         known = (input() == '')  # user hit Enter
         if not known:

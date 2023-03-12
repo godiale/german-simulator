@@ -1,8 +1,10 @@
 from pandas_ods_reader import read_ods
 from collections import defaultdict
 import random
+import datetime
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
+STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
 
 PREFIXES = [
@@ -20,6 +22,14 @@ def read_verbs_from_file():
     df.drop_duplicates(subset='verb')
     df = df.set_index('verb', drop=False)
     return df
+
+
+def append_stats_to_file(word, result):
+    #
+    timestamp = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
+    result_str = '1' if result else '0'
+    with open(STATS_STORE, "a", encoding='utf-8') as f:
+        f.write(f'"{word}","{timestamp}","{result_str}"\n')
 
 
 def create_exercise(df):
@@ -64,9 +74,10 @@ def main():
     for index, row in df.iterrows():
         input(f"{row.verb} ? ")
         print(f"    {row.translation}")
-        known = input()
-        if known != '':  # user hit Enter
+        known = (input() == '')  # user hit Enter
+        if not known:
             fail += 1
+        append_stats_to_file(row.verb, known)
 
     total = len(df.index)
     print(f"Pass={total-fail}, Fail={fail} (Total {total})")

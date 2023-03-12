@@ -3,7 +3,7 @@ from collections import defaultdict
 import random
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
-SMALLEST_EXERCISE_SIZE = 20
+DEFAULT_EXERCISE_SIZE = 20
 
 PREFIXES = [
     'ab', 'an', 'auf', 'aus', 'be', 'ein', 'ent', 'er',
@@ -46,8 +46,11 @@ def create_exercise(df):
         regex = input("Enter words regex: ")
         df = df[df.verb.str.contains(regex)]
 
-    if len(df.index) > SMALLEST_EXERCISE_SIZE:
-        exercise_size = input(f"Enter size of exercise: (1-{len(df.index)}): ")
+    if len(df.index) > DEFAULT_EXERCISE_SIZE:
+        exercise_size = input(f"Enter size of exercise: "
+                              f"(1-{len(df.index)}) [{DEFAULT_EXERCISE_SIZE}]: ")
+        if exercise_size == "":
+            exercise_size = DEFAULT_EXERCISE_SIZE
         df = df.head(int(exercise_size))
     return df
 

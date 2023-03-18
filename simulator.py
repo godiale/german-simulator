@@ -3,6 +3,7 @@ from collections import defaultdict
 import random
 import datetime
 import csv
+import pandas
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
@@ -33,37 +34,62 @@ def append_stats_to_file(word, result):
 
 
 def read_stats_from_file():
-    stats = defaultdict(list)
+    tries = defaultdict(list)
+    times = dict()
     with open(STATS_STORE, encoding='utf-8') as f:
         stats_reader = csv.reader(f)
         for row in stats_reader:
-            stats[row[0]].append(row[2])
+            tries[row[0]].append(row[2])
+            times[row[0]] = row[1]
+    stats = dict()
+    for v in tries.keys():
+        stats[v] = {'tries': ''.join(tries[v]),
+                    'last_timestamp': datetime.datetime.fromisoformat(times[v])}
     return stats
 
 
-def create_exercise(df):
+def create_word_groups(df):
+    r2v = defaultdict(list)
+    for v in df.verb.tolist():
+        r2v[v].append(v)
+        for p in PREFIXES:
+            if v.startswith(p):
+                r2v[v.removeprefix(p)].append(v)
+    roots = list(r2v.keys())
+    random.shuffle(roots)
+    verbs = []
+    for r in roots:
+        if len(r2v[r]) > 1:
+            verbs.extend(r2v[r])
+    return df.loc[verbs]
+
+
+# Move words, that were last 5 times correctly answered,
+# and last question on the word was less than 5 days ago, to the end.
+def move_down_known_words(df, stats):
+    def is_known(word):
+        if word not in stats:
+            return False
+        st = stats[word]
+        return st['tries'].endswith('11111') and \
+            datetime.datetime.now() - st['last_timestamp'] < datetime.timedelta(days=5)
+    return pandas.concat([df.loc[~df.verb.apply(is_known)],
+                          df.loc[df.verb.apply(is_known)]])
+
+
+def create_exercise(df, stats):
     mode = input("Enter mode (plain|group) [plain]: ")
     if mode == '':
         mode = 'plain'
 
     if mode == 'group':
-        r2v = defaultdict(list)
-        for v in df.verb.tolist():
-            r2v[v].append(v)
-            for p in PREFIXES:
-                if v.startswith(p):
-                    r2v[v.removeprefix(p)].append(v)
-        roots = list(r2v.keys())
-        random.shuffle(roots)
-        verbs = []
-        for r in roots:
-            if len(r2v[r]) > 1:
-                verbs.extend(r2v[r])
-        df = df.loc[verbs]
+        df = create_word_groups(df)
     else:  # plain
         df = df.sample(frac=1).reset_index(drop=True)  # random order
         regex = input("Enter words regex: ")
         df = df[df.verb.str.contains(regex)]
+
+    df = move_down_known_words(df, stats)
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "
@@ -76,15 +102,16 @@ def create_exercise(df):
 
 def main():
     df = read_verbs_from_file()
-    df = create_exercise(df)
-
     stats = read_stats_from_file()
+
+    df = create_exercise(df, stats)
 
     fail = 0
 
-    for index, row in df.iterrows():
-        stat = ''.join(stats[row.verb]).replace('1', '+').replace('0', '-')[:5]
-        input(f"{row.verb} ({stat})? ")
+    for index, (_, row) in enumerate(df.iterrows()):
+        stat = stats[row.verb]['tries'].replace('1', '+').replace('0', '-')[:5] \
+            if row.verb in stats else ''
+        input(f"{index+1}. {row.verb} ({stat})? ")
         print(f"    {row.translation}")
         known = (input() == '')  # user hit Enter
         if not known:

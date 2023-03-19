@@ -15,14 +15,14 @@ PREFIXES = [
 ]
 
 
-def read_verbs_from_file():
-    df = read_ods(WORDS_STORE, "Verben", headers=False,
-                  columns=['a', 'verb', 'b', 'translation'])\
+def read_words_from_file(sheet):
+    df = read_ods(WORDS_STORE, sheet, headers=False,
+                  columns=['a', 'word', 'b', 'translation'])\
         .drop(columns=['a', 'b'])
     df = df[df.translation.notnull()]
-    df.verb = df.verb.str.strip()
-    df.drop_duplicates(subset='verb')
-    df = df.set_index('verb', drop=False)
+    df.word = df.word.str.strip()
+    df.drop_duplicates(subset='word')
+    df = df.set_index('word', drop=False)
     return df
 
 
@@ -50,18 +50,18 @@ def read_stats_from_file():
 
 def create_word_groups(df):
     r2v = defaultdict(list)
-    for v in df.verb.tolist():
+    for v in df.word.tolist():
         r2v[v].append(v)
         for p in PREFIXES:
             if v.startswith(p):
                 r2v[v.removeprefix(p)].append(v)
     roots = list(r2v.keys())
     random.shuffle(roots)
-    verbs = []
+    words = []
     for r in roots:
         if len(r2v[r]) > 1:
-            verbs.extend(r2v[r])
-    return df.loc[verbs]
+            words.extend(r2v[r])
+    return df.loc[words]
 
 
 # Move words, that were last 5 times correctly answered,
@@ -73,8 +73,8 @@ def move_down_known_words(df, stats):
         st = stats[word]
         return st['tries'].endswith('11111') and \
             datetime.datetime.now() - st['last_timestamp'] < datetime.timedelta(days=5)
-    return pandas.concat([df.loc[~df.verb.apply(is_known)],
-                          df.loc[df.verb.apply(is_known)]])
+    return pandas.concat([df.loc[~df.word.apply(is_known)],
+                          df.loc[df.word.apply(is_known)]])
 
 
 def create_exercise(df, stats):
@@ -87,9 +87,8 @@ def create_exercise(df, stats):
     else:  # plain
         df = df.sample(frac=1).reset_index(drop=True)  # random order
         regex = input("Enter words regex: ")
-        df = df[df.verb.str.contains(regex)]
-
-    df = move_down_known_words(df, stats)
+        df = df[df.word.str.contains(regex)]
+        df = move_down_known_words(df, stats)
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "
@@ -101,7 +100,7 @@ def create_exercise(df, stats):
 
 
 def main():
-    df = read_verbs_from_file()
+    df = read_words_from_file('Verben')
     stats = read_stats_from_file()
 
     df = create_exercise(df, stats)
@@ -109,14 +108,14 @@ def main():
     fail = 0
 
     for index, (_, row) in enumerate(df.iterrows()):
-        stat = stats[row.verb]['tries'].replace('1', '+').replace('0', '-')[:5] \
-            if row.verb in stats else ''
-        input(f"{index+1}. {row.verb} ({stat})? ")
+        stat = stats[row.word]['tries'].replace('1', '+').replace('0', '-')[:5] \
+            if row.word in stats else ''
+        input(f"{index+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
         known = (input() == '')  # user hit Enter
         if not known:
             fail += 1
-        append_stats_to_file(row.verb, known)
+        append_stats_to_file(row.word, known)
 
     total = len(df.index)
     print(f"Pass={total-fail}, Fail={fail} (Total {total})")

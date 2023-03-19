@@ -17,8 +17,8 @@ PREFIXES = [
 
 def read_words_from_file(sheet):
     df = read_ods(WORDS_STORE, sheet, headers=False,
-                  columns=['a', 'word', 'b', 'translation'])\
-        .drop(columns=['a', 'b'])
+                  columns=['a', 'word', 'b', 'translation']) \
+         .drop(columns=['b'])  # a is intentionally empty
     df = df[df.translation.notnull()]
     df.word = df.word.str.strip()
     df.drop_duplicates(subset='word')
@@ -100,7 +100,11 @@ def create_exercise(df, stats):
 
 
 def main():
-    df = read_words_from_file('Verben')
+    word_type = input("Enter type (Verb|Adverb) [Verb]: ")
+    if word_type == '':
+        word_type = 'Verb'
+
+    df = read_words_from_file(word_type)
     stats = read_stats_from_file()
 
     df = create_exercise(df, stats)

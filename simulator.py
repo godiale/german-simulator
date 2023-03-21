@@ -4,6 +4,7 @@ import random
 import datetime
 import csv
 import pandas
+import pyttsx3
 
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
@@ -99,7 +100,18 @@ def create_exercise(df, stats):
     return df
 
 
+def init_voice_engine():
+    engine = pyttsx3.init()
+    # noinspection PyTypeChecker
+    for voice in engine.getProperty('voices'):
+        if 'German' in voice.name:
+            engine.setProperty('voice', voice.id)
+    return engine
+
+
 def main():
+    voice_engine = init_voice_engine()
+
     word_type = input("Enter type (Verb|Adverb) [Verb]: ")
     if word_type == '':
         word_type = 'Verb'
@@ -114,6 +126,8 @@ def main():
     for index, (_, row) in enumerate(df.iterrows()):
         stat = stats[row.word]['tries'].replace('1', '+').replace('0', '-')[:5] \
             if row.word in stats else ''
+        voice_engine.say(row.word)
+        voice_engine.runAndWait()
         input(f"{index+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
         known = (input() == '')  # user hit Enter

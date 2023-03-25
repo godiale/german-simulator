@@ -29,7 +29,7 @@ def read_words_from_file(sheet):
 
 def append_stats_to_file(word, result):
     timestamp = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
-    result_str = '1' if result else '0'
+    result_str = '+' if result else '-'
     with open(STATS_STORE, "a", encoding='utf-8') as f:
         f.write(f'"{word}","{timestamp}","{result_str}"\n')
 

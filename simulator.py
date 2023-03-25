@@ -67,12 +67,21 @@ def create_word_groups(df):
 
 # Move words, that were last 5 times correctly answered,
 # and last question on the word was less than 5 days ago, to the end.
-def move_down_known_words(df, stats):
+def filter_known_words(df, stats):
+    last_attempts_pattern = input("Enter last attempts pattern []: ")
+    if last_attempts_pattern != '':
+        def matches_last_attempts_pattern(word):
+            if word not in stats:
+                return False
+            st = stats[word]
+            return st['tries'].endswith(last_attempts_pattern)
+        df = df.loc[df.word.apply(matches_last_attempts_pattern)]
+
     def is_known(word):
         if word not in stats:
             return False
         st = stats[word]
-        return st['tries'].endswith('11111') and \
+        return st['tries'].endswith('+++++') and \
             datetime.datetime.now() - st['last_timestamp'] < datetime.timedelta(days=5)
     return pandas.concat([df.loc[~df.word.apply(is_known)],
                           df.loc[df.word.apply(is_known)]])
@@ -87,9 +96,9 @@ def create_exercise(df, stats):
         df = create_word_groups(df)
     else:  # plain
         df = df.sample(frac=1).reset_index(drop=True)  # random order
-        regex = input("Enter words regex: ")
+        regex = input("Enter words regex []: ")
         df = df[df.word.str.contains(regex)]
-        df = move_down_known_words(df, stats)
+        df = filter_known_words(df, stats)
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "
@@ -124,8 +133,7 @@ def main():
     fail = 0
 
     for index, (_, row) in enumerate(df.iterrows()):
-        stat = stats[row.word]['tries'].replace('1', '+').replace('0', '-')[:5] \
-            if row.word in stats else ''
+        stat = stats[row.word]['tries'][:5] if row.word in stats else ''
         voice_engine.say(row.word)
         voice_engine.runAndWait()
         input(f"{index+1}. {row.word} ({stat})? ")

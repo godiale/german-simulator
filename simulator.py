@@ -15,6 +15,8 @@ PREFIXES = [
     'ge', 'him', 'über', 'unter', 'ver', 'vor', 'zu'
 ]
 
+NON_SPLITTABLE_ROOTS = ['geben', 'gehen']
+
 
 def read_words_from_file(sheet):
     df = read_ods(WORDS_STORE, sheet, headers=False,
@@ -52,10 +54,16 @@ def read_stats_from_file():
 def create_word_groups(df):
     r2v = defaultdict(list)
     for v in df.word.tolist():
-        r2v[v].append(v)
-        for p in PREFIXES:
-            if v.startswith(p):
-                r2v[v.removeprefix(p)].append(v)
+        root = v
+        while True:
+            repeat = False
+            for p in PREFIXES:
+                if root.startswith(p) and root not in NON_SPLITTABLE_ROOTS:
+                    root = root.removeprefix(p)
+                    repeat = True
+            if not repeat:
+                break
+        r2v[root].append(v)
     roots = list(r2v.keys())
     random.shuffle(roots)
     words = []

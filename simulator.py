@@ -20,8 +20,10 @@ NON_SPLITTABLE_ROOTS = ['geben', 'gehen']
 
 def read_words_from_file(sheet):
     df = read_ods(WORDS_STORE, sheet, headers=False,
-                  columns=['a', 'word', 'b', 'translation']) \
-         .drop(columns=['b'])  # a is intentionally empty
+                  columns=['a', 'word',
+                           'b', 'translation',
+                           'present', 'past1', 'past2']) \
+         .drop(columns=['b'])  # a and b are intentionally empty
     df = df[df.translation.notnull()]
     df.word = df.word.str.strip()
     df.drop_duplicates(subset='word')
@@ -146,6 +148,10 @@ def main():
         voice_engine.runAndWait()
         input(f"{index+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
+        forms = f"{row.present}, {row.past1}, {row.past2}"
+        print(f"    {forms}")
+        voice_engine.say(forms)
+        voice_engine.runAndWait()
         known = (input() == '')  # user hit Enter
         if not known:
             fail += 1

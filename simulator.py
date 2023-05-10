@@ -135,6 +135,13 @@ def main():
     if word_type == '':
         word_type = 'Verb'
 
+    check_forms = False
+    if word_type == 'Verb':
+        check_forms_input = input("Check verb forms (Yes|No) [No]: ")
+        if check_forms_input == '':
+            check_forms_input = 'No'
+        check_forms = True if check_forms_input == 'Yes' else False
+
     df = read_words_from_file(word_type)
     stats = read_stats_from_file()
 
@@ -148,10 +155,11 @@ def main():
         voice_engine.runAndWait()
         input(f"{index+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
-        forms = f"{row.present}, {row.past1}, {row.past2}"
-        print(f"    {forms}")
-        voice_engine.say(forms)
-        voice_engine.runAndWait()
+        if check_forms and None not in (row.present, row.past1, row.past2):
+            forms = f"{row.present}, {row.past1}, {row.past2}"
+            print(f"    {forms}")
+            voice_engine.say(forms)
+            voice_engine.runAndWait()
         known = (input() == '')  # user hit Enter
         if not known:
             fail += 1

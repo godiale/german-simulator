@@ -11,7 +11,7 @@ STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
 
 PREFIXES = [
-    'ab', 'an', 'auf', 'aus', 'be', 'ein', 'ent', 'er',
+    'ab', 'an', 'auf', 'aus', 'be', 'ein', 'ent', 'er', 'emp',
     'ge', 'him', 'über', 'unter', 'ver', 'vor', 'zu'
 ]
 

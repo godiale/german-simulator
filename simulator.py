@@ -1,12 +1,11 @@
-from pandas_ods_reader import read_ods
 from collections import defaultdict
+import pandas
 import random
 import datetime
 import csv
-import pandas
 import pyttsx3
 
-WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.ods"
+WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
 
@@ -19,11 +18,9 @@ NON_SPLITTABLE_ROOTS = ['geben', 'gehen']
 
 
 def read_words_from_file(sheet):
-    df = read_ods(WORDS_STORE, sheet, headers=False,
-                  columns=['a', 'word',
-                           'b', 'translation',
-                           'present', 'past1', 'past2']) \
-         .drop(columns=['b'])  # a and b are intentionally empty
+    # noinspection PyTypeChecker
+    df = pandas.read_excel(WORDS_STORE, sheet_name=sheet, header=None, usecols='B,D,E,F,G')
+    df.columns = ['word', 'translation', 'present', 'past1', 'past2']
     df = df[df.translation.notnull()]
     df.word = df.word.str.strip()
     df.drop_duplicates(subset='word')
@@ -153,7 +150,7 @@ def main():
         stat = stats[row.word]['tries'][:5] if row.word in stats else ''
         voice_engine.say(row.word)
         voice_engine.runAndWait()
-        input(f"{index+1}. {row.word} ({stat})? ")
+        input(f"{int(index)+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
         if check_forms and None not in (row.present, row.past1, row.past2):
             forms = f"{row.present}, {row.past1}, {row.past2}"

@@ -147,7 +147,7 @@ def main():
     fail = 0
 
     for index, (_, row) in enumerate(df.iterrows()):
-        stat = stats[row.word]['tries'][:5] if row.word in stats else ''
+        stat = stats[row.word]['tries'][-5:] if row.word in stats else ''
         voice_engine.say(row.word)
         voice_engine.runAndWait()
         input(f"{int(index)+1}. {row.word} ({stat})? ")

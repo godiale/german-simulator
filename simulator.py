@@ -18,9 +18,21 @@ NON_SPLITTABLE_ROOTS = ['geben', 'gehen']
 
 
 def read_words_from_file(sheet):
+    match sheet:
+        case 'Verb':
+            usecols = 'B,D,E,F,G'
+            columns = ['word', 'translation', 'present', 'past1', 'past2']
+        case 'Substantive':
+            usecols = 'B,D,E,F'
+            columns = ['word', 'translation', 'article', 'plural']
+        case 'Adverb':
+            usecols = 'B,D'
+            columns = ['word', 'translation']
+        case _:
+            raise ValueError(f"Invalid sheet {sheet}")
     # noinspection PyTypeChecker
-    df = pandas.read_excel(WORDS_STORE, sheet_name=sheet, header=None, usecols='B,D,E,F,G')
-    df.columns = ['word', 'translation', 'present', 'past1', 'past2']
+    df = pandas.read_excel(WORDS_STORE, sheet_name=sheet, header=None, usecols=usecols)
+    df.columns = columns
     df = df[df.translation.notnull()]
     df.word = df.word.str.strip()
     df.drop_duplicates(subset='word')
@@ -104,7 +116,7 @@ def create_exercise(df, stats):
     else:  # plain
         df = df.sample(frac=1).reset_index(drop=True)  # random order
         regex = input("Enter words regex []: ")
-        df = df[df.word.str.contains(regex)]
+        df = df[df.word.str.contains(regex, na=False)]
         df = filter_known_words(df, stats)
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
@@ -128,9 +140,14 @@ def init_voice_engine():
 def main():
     voice_engine = init_voice_engine()
 
-    word_type = input("Enter type (Verb|Adverb) [Verb]: ")
-    if word_type == '':
-        word_type = 'Verb'
+    word_type = input("Enter type ([V]erb|[S]ubstantive|[A]dverb) [Verb]: ")
+    match word_type:
+        case '' | 'V':
+            word_type = 'Verb'
+        case 'S':
+            word_type = 'Substantive'
+        case 'A':
+            word_type = 'Adverb'
 
     check_forms = False
     if word_type == 'Verb':

@@ -169,6 +169,8 @@ def main():
         voice_engine.runAndWait()
         input(f"{int(index)+1}. {row.word} ({stat})? ")
         print(f"    {row.translation}")
+        if word_type == 'Substantive':
+            print(f"    {row.article}")
         if check_forms and None not in (row.present, row.past1, row.past2):
             forms = f"{row.present}, {row.past1}, {row.past2}"
             print(f"    {forms}")

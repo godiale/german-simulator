@@ -162,6 +162,7 @@ def main():
     df = create_exercise(df, stats)
 
     fail = 0
+    failed_words = dict()
 
     for index, (_, row) in enumerate(df.iterrows()):
         stat = stats[row.word]['tries'][-5:] if row.word in stats else ''
@@ -179,10 +180,13 @@ def main():
         known = (input() == '')  # user hit Enter
         if not known:
             fail += 1
+            failed_words[row.word] = row.translation
         append_stats_to_file(row.word, known)
 
     total = len(df.index)
     print(f"Pass={total-fail}, Fail={fail} (Total {total})")
+    for word in sorted(failed_words.keys()):
+        print(f'    {word:<20}  {failed_words[word]}')
 
 
 if __name__ == '__main__':

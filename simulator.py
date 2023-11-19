@@ -49,20 +49,20 @@ def append_stats_to_file(word, result):
 
 def read_stats_from_file():
     tries = defaultdict(list)
-    times = dict()
+    times = defaultdict(list)
     with open(STATS_STORE, encoding='utf-8') as f:
         stats_reader = csv.reader(f)
         for row in stats_reader:
-            tries[row[0]].append(row[2])
-            times[row[0]] = row[1]
-    stats = dict()
-    for v in tries.keys():
-        stats[v] = {'tries': ''.join(tries[v]),
-                    'last_timestamp': datetime.datetime.fromisoformat(times[v])}
-    return stats
+            tries[row[0]].append(1 if row[2] == '+' else 0)
+            times[row[0]].append(datetime.datetime.fromisoformat(row[1]))
+    return {v: {'tries': tries[v], 'times': times[v]} for v in tries.keys()}
 
 
-def create_word_groups(df):
+def constant_weight_func(_stat):
+    return 1.0
+
+
+def create_word_groups(df, stats):
     r2v = defaultdict(list)
     for v in df.word.tolist():
         root = v
@@ -84,26 +84,13 @@ def create_word_groups(df):
     return df.loc[words]
 
 
-# Move words, that were last 5 times correctly answered,
-# and last question on the word was less than 5 days ago, to the end.
-def filter_known_words(df, stats):
-    last_attempts_pattern = input("Enter last attempts pattern []: ")
-    if last_attempts_pattern != '':
-        def matches_last_attempts_pattern(word):
-            if word not in stats:
-                return False
-            st = stats[word]
-            return st['tries'].endswith(last_attempts_pattern)
-        df = df.loc[df.word.apply(matches_last_attempts_pattern)]
-
-    def is_known(word):
-        if word not in stats:
-            return False
-        st = stats[word]
-        return st['tries'].endswith('+++++') and \
-            datetime.datetime.now() - st['last_timestamp'] < datetime.timedelta(days=5)
-    return pandas.concat([df.loc[~df.word.apply(is_known)],
-                          df.loc[df.word.apply(is_known)]])
+def create_word_plain(df, stats):
+    weights = list(map(constant_weight_func, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
+    denominator = sum(weights)
+    weights = list(map(lambda v: v / denominator, weights))
+    df = df.sample(frac=1, weights=weights).reset_index(drop=True)  # random order
+    regex = input("Enter words regex []: ")
+    return df[df.word.str.contains(regex, na=False)]
 
 
 def create_exercise(df, stats):
@@ -112,12 +99,9 @@ def create_exercise(df, stats):
         mode = 'plain'
 
     if mode == 'group':
-        df = create_word_groups(df)
+        df = create_word_groups(df, stats)
     else:  # plain
-        df = df.sample(frac=1).reset_index(drop=True)  # random order
-        regex = input("Enter words regex []: ")
-        df = df[df.word.str.contains(regex, na=False)]
-        df = filter_known_words(df, stats)
+        df = create_word_plain(df, stats)
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "
@@ -165,7 +149,7 @@ def main():
     failed_words = dict()
 
     for index, (_, row) in enumerate(df.iterrows()):
-        stat = stats[row.word]['tries'][-5:] if row.word in stats else ''
+        stat = ''.join('+' if v else '-' for v in stats[row.word]['tries'][-5:]) if row.word in stats else ''
         voice_engine.say(row.word)
         voice_engine.runAndWait()
         input(f"{int(index)+1}. {row.word} ({stat})? ")

@@ -8,6 +8,7 @@ import pyttsx3
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
+LAST_TRIES_TO_CONSIDER = 5
 
 PREFIXES = [
     'ab', 'an', 'auf', 'aus', 'be', 'ein', 'ent', 'er', 'emp',
@@ -62,6 +63,11 @@ def constant_weight_func(_stat):
     return 1.0
 
 
+def last_fails_weight_func(stat, last_tries=LAST_TRIES_TO_CONSIDER):
+    # weight: number of fails in horizon + avoid non-zero weights
+    return last_tries - sum(stat['tries'][-last_tries:] if 'tries' in stat else {}) + 1
+
+
 def create_word_groups(df, stats):
     r2v = defaultdict(list)
     for v in df.word.tolist():
@@ -85,10 +91,9 @@ def create_word_groups(df, stats):
 
 
 def create_word_plain(df, stats):
-    weights = list(map(constant_weight_func, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
-    denominator = sum(weights)
-    weights = list(map(lambda v: v / denominator, weights))
-    df = df.sample(frac=1, weights=weights).reset_index(drop=True)  # random order
+    df['weights'] = list(map(last_fails_weight_func, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
+    df = df.loc[(df['weights'] > 0.0)]  # remove elements with zero probability
+    df = df.sample(frac=1, weights='weights').reset_index(drop=True)  # random order
     regex = input("Enter words regex []: ")
     return df[df.word.str.contains(regex, na=False)]
 

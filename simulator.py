@@ -154,11 +154,12 @@ def main():
     failed_words = dict()
 
     for index, (_, row) in enumerate(df.iterrows()):
-        stat = ''.join('+' if v else '-' for v in stats[row.word]['tries'][-5:]) if row.word in stats else ''
         voice_engine.say(row.word)
         voice_engine.runAndWait()
-        input(f"{int(index)+1}. {row.word} ({stat})? ")
+        input(f"{int(index)+1}. {row.word}? ")
         print(f"    {row.translation}")
+        stat = ''.join('+' if v else '-' for v in stats[row.word]['tries'][-5:]) if row.word in stats else ''
+        print(f"    {stat}")
         if word_type == 'Substantive':
             print(f"    {row.article}")
         if check_forms and None not in (row.present, row.past1, row.past2):

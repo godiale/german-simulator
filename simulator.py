@@ -1,4 +1,3 @@
-import math
 from collections import defaultdict
 import pandas
 import random
@@ -10,6 +9,7 @@ WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
 LAST_TRIES_TO_CONSIDER = 5
+FAIL_WEIGHT = 20
 WORD_FREQUENCY_INTERVALS_TO_CONSIDER = 5
 WORD_FREQUENCY_INTERVAL_DAYS = 14
 GLOBAL_DEBUG = True
@@ -68,9 +68,9 @@ def constant_weight_func(_stat):
     return 1.0
 
 
-def fails_weight_func(stat, last_tries=LAST_TRIES_TO_CONSIDER):
+def fails_weight_func(stat, last_tries=LAST_TRIES_TO_CONSIDER, fail_weight=FAIL_WEIGHT):
     tries = stat['tries'] if 'tries' in stat else []
-    return math.pow(min(last_tries, len(tries)) - sum(tries[-last_tries:]), 2)
+    return (min(last_tries, len(tries)) - sum(tries[-last_tries:])) * fail_weight
 
 
 def frequency_weight_func(stat,
@@ -117,7 +117,6 @@ def create_word_groups(df, stats):
 
 def create_word_plain(df, stats):
     df['weights'] = list(map(WEIGHT_FUNC, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
-
     original_rows_count = len(df)
     df = df.loc[(df['weights'] > 0.0)]  # remove elements with zero probability
     if GLOBAL_DEBUG:

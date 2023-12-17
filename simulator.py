@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 import pandas
 import random
@@ -9,6 +10,10 @@ WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
 LAST_TRIES_TO_CONSIDER = 5
+WORD_FREQUENCY_INTERVALS_TO_CONSIDER = 5
+WORD_FREQUENCY_INTERVAL_DAYS = 14
+GLOBAL_DEBUG = True
+
 
 PREFIXES = [
     'ab', 'an', 'auf', 'aus', 'be', 'ein', 'ent', 'er', 'emp',
@@ -63,9 +68,29 @@ def constant_weight_func(_stat):
     return 1.0
 
 
-def last_fails_weight_func(stat, last_tries=LAST_TRIES_TO_CONSIDER):
-    # weight: number of fails in horizon + avoid non-zero weights
-    return last_tries - sum(stat['tries'][-last_tries:] if 'tries' in stat else {}) + 1
+def fails_weight_func(stat, last_tries=LAST_TRIES_TO_CONSIDER):
+    tries = stat['tries'] if 'tries' in stat else []
+    return math.pow(min(last_tries, len(tries)) - sum(tries[-last_tries:]), 2)
+
+
+def frequency_weight_func(stat,
+                          last_intervals=WORD_FREQUENCY_INTERVALS_TO_CONSIDER,
+                          interval_days=WORD_FREQUENCY_INTERVAL_DAYS,
+                          ref_timestamp_func=lambda: datetime.datetime.now()):
+    now = ref_timestamp_func()
+    buckets_with_times = set()
+    times = stat['times'] if 'times' in stat else []
+    for t in times:
+        bucket = (now - t).days / interval_days  # [now-interval_days, now) is bucket 0
+        buckets_with_times.add(bucket)
+    return sum(0 if bucket in buckets_with_times else 1 for bucket in range(0, last_intervals))
+
+
+def frequency_fails_weight_func(stat):
+    return frequency_weight_func(stat) + fails_weight_func(stat)
+
+
+WEIGHT_FUNC = frequency_fails_weight_func
 
 
 def create_word_groups(df, stats):
@@ -91,8 +116,12 @@ def create_word_groups(df, stats):
 
 
 def create_word_plain(df, stats):
-    df['weights'] = list(map(last_fails_weight_func, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
+    df['weights'] = list(map(WEIGHT_FUNC, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
+
+    original_rows_count = len(df)
     df = df.loc[(df['weights'] > 0.0)]  # remove elements with zero probability
+    if GLOBAL_DEBUG:
+        print(f"{original_rows_count-len(df)} words with 0 weight removed from the list")
     df = df.sample(frac=1, weights='weights').reset_index(drop=True)  # random order
     regex = input("Enter words regex []: ")
     return df[df.word.str.contains(regex, na=False)]
@@ -156,10 +185,11 @@ def main():
     for index, (_, row) in enumerate(df.iterrows()):
         voice_engine.say(row.word)
         voice_engine.runAndWait()
-        input(f"{int(index)+1}. {row.word}? ")
+        input(f"{int(index)+1}. {row.word} ? ")
         print(f"    {row.translation}")
         stat = ''.join('+' if v else '-' for v in stats[row.word]['tries'][-5:]) if row.word in stats else ''
-        print(f"    {stat}")
+        weight = WEIGHT_FUNC(stats[row.word] if row.word in stats else {})
+        print(f"    {stat} {weight if GLOBAL_DEBUG else ''}")
         if word_type == 'Substantive':
             print(f"    {row.article}")
         if check_forms and None not in (row.present, row.past1, row.past2):

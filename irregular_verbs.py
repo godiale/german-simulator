@@ -28,6 +28,42 @@ IRREGULAR_VERBS = {
         'schreiten',
         'streichen',
         'streiten',
+    ),
+    "ie -> o, o": (
+        'biegen',
+        'bieten',
+        'fliegen',
+        'fliehen',
+        'fließen',
+        'frieren',
+        'gießen',
+        'genießen',
+        'kriechen',
+        'riechen',
+        'schieben',
+        'schießen',
+        'schließen',
+        'verlieren',
+        'wiegen',
+        'ziehen',
+    ),
+    "i -> a, u": (
+        'binden',
+        'dringen',
+        'finden',
+        'gelingen',
+        'klingen',
+        'singen',
+        'sinken',
+        'springen',
+        'trinken',
+        'verschwinden',
+        'zwingen'
+    ),
+    "i -> a, o": (
+        'beginnen',
+        'gewinnen',
+        'schwimmen'
     )
 }
 

@@ -5,6 +5,8 @@ import datetime
 import csv
 import pyttsx3
 
+from irregular_verbs import get_irregular_verbs
+
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
@@ -126,10 +128,13 @@ def create_word_plain(df, stats):
     return df[df.word.str.contains(regex, na=False)]
 
 
-def create_exercise(df, stats):
+def create_exercise(df, word_type, stats):
     mode = input("Enter mode (plain|group) [plain]: ")
     if mode == '':
         mode = 'plain'
+
+    if word_type == 'Irregular':
+        df = df.loc[get_irregular_verbs()]
 
     if mode == 'group':
         df = create_word_groups(df, stats)
@@ -157,26 +162,29 @@ def init_voice_engine():
 def main():
     voice_engine = init_voice_engine()
 
-    word_type = input("Enter type ([V]erb|[S]ubstantive|[A]dverb) [Verb]: ")
+    word_type = input("Enter type ([V]erb|[I]rregular|[S]ubstantive|[A]dverb) [Verb]: ")
     match word_type:
         case '' | 'V':
             word_type = 'Verb'
+        case 'I':
+            word_type = 'Irregular'
         case 'S':
             word_type = 'Substantive'
         case 'A':
             word_type = 'Adverb'
 
     check_forms = False
-    if word_type == 'Verb':
-        check_forms_input = input("Check verb forms (Yes|No) [No]: ")
+    if word_type in ('Verb', 'Irregular'):
+        default_word_type = 'Yes' if word_type == 'Irregular' else 'No'
+        check_forms_input = input(f"Check verb forms (Yes|No) [{default_word_type}]: ")
         if check_forms_input == '':
-            check_forms_input = 'No'
+            check_forms_input = default_word_type
         check_forms = True if check_forms_input == 'Yes' else False
 
-    df = read_words_from_file(word_type)
+    df = read_words_from_file('Verb' if word_type == 'Irregular' else word_type)
     stats = read_stats_from_file()
 
-    df = create_exercise(df, stats)
+    df = create_exercise(df, word_type, stats)
 
     fail = 0
     failed_words = dict()

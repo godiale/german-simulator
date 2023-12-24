@@ -64,6 +64,59 @@ IRREGULAR_VERBS = {
         'beginnen',
         'gewinnen',
         'schwimmen'
+    ),
+    "e -> a, o": (
+        'befehlen',
+        'bergen',
+        'bersten',
+        'brechen',
+        'erschrecken',
+        'gelten',
+        'helfen',
+        'nehmen',
+        'sprechen',
+        'stehlen',
+        'sterben',
+        'treffen',
+        'werben',
+        'werfen',
+    ),
+    "ä -> a, o": (
+        'gebären'
+    ),
+    "e -> a, e": (
+        'essen',
+        'geben',
+        'genesen',
+        'geschehen',
+        'lesen',
+        'messen',
+        'sehen',
+        'treten',
+        'vergessen',
+    ),
+    "i -> a, e": (
+        'bitten',
+        'liegen',
+        'sitzen',
+    ),
+    "a -> u, a": (
+        'backen',
+        'fahren',
+        'graben',
+        'laden',
+        'schaffen',
+        'schlagen',
+        'tragen',
+        'wachsen',
+        'waschen',
+    ),
+    "e,ä,ü,ö -> o,o": (
+        'erwägen',
+        'flechten',
+        'heben',
+        'lügen',
+        'schmelzen'
     )
 }
 

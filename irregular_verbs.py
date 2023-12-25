@@ -82,7 +82,7 @@ IRREGULAR_VERBS = {
         'werfen',
     ),
     "ä -> a, o": (
-        'gebären'
+        'gebären',
     ),
     "e -> a, e": (
         'essen',
@@ -111,12 +111,63 @@ IRREGULAR_VERBS = {
         'wachsen',
         'waschen',
     ),
-    "e,ä,ü,ö -> o,o": (
+    "e|ä|ü|ö -> o, o": (
         'erwägen',
         'flechten',
         'heben',
         'lügen',
         'schmelzen'
+    ),
+    "a -> ie, a": (
+        'blasen',
+        'braten',
+        'fallen',
+        'gefallen',
+        'halten',
+        'lassen',
+        'raten',
+        'schlafen'
+    ),
+    "a -> i, a": (
+        'fangen',
+        'hängen',
+    ),
+    "au|ei|o|u -> ie, au|ei|o|u": (
+        'hauen',
+        'heißen',
+        'laufen',
+        'rufen',
+        'stoßen',
+    ),
+    "irregular": (
+        'gehen',
+        'kommen',
+        'stehen',
+        'tun'
+    ),
+    "auxiliary": (
+        'sein',
+        'haben',
+        'werden'
+    ),
+    "mixed": (
+        'brennen',
+        'bringen',
+        'denken',
+        'kennen',
+        'nennen',
+        'rennen',
+        'senden',
+        'wenden',
+        'wissen'
+    ),
+    "model": (
+        'können',
+        'dürfen',
+        'sollen',
+        'müssen',
+        'wollen',
+        'mögen'
     )
 }
 

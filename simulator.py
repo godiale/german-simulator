@@ -141,6 +141,10 @@ def create_exercise(df, word_type, stats):
     else:  # plain
         df = create_word_plain(df, stats)
 
+    word_length_str = input("Enter maximum word length [unlimited]: ")
+    if word_length_str:
+        df = df.loc[df['word'].str.len() <= int(word_length_str)]
+
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "
                               f"(1-{len(df.index)}) [{DEFAULT_EXERCISE_SIZE}]: ")

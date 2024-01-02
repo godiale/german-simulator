@@ -7,6 +7,11 @@ import pyttsx3
 
 from irregular_verbs import get_irregular_verbs
 
+# Suppress warning about operation on copy of a slice from DataFrame for assignments like df = df.loc
+# See https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
+pandas.options.mode.chained_assignment = None
+
+
 WORDS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter.xlsx"
 STATS_STORE = "C:/Users/godiale/Dropbox/Deutsch/Deutsche_Worter_Stats.csv"
 DEFAULT_EXERCISE_SIZE = 20
@@ -118,14 +123,25 @@ def create_word_groups(df, stats):
 
 
 def create_word_plain(df, stats):
+    last_attempts_pattern = input("Enter last attempts pattern []: ")
+    if last_attempts_pattern != '':
+        last_attempts_pattern = last_attempts_pattern.replace('-', '0').replace('+', '1')
+
+        def matches_last_attempts_pattern(word):
+            if word not in stats:
+                return False
+            return ''.join(map(str, stats[word]['tries'])).endswith(last_attempts_pattern)
+        df = df.loc[df.word.apply(matches_last_attempts_pattern)]
+
+    regex = input("Enter words regex []: ")
+    df = df.loc[df.word.str.contains(regex, na=False)]
+
     df['weights'] = list(map(WEIGHT_FUNC, map(lambda v: stats[v] if v in stats else {}, df.word.tolist())))
     original_rows_count = len(df)
     df = df.loc[(df['weights'] > 0.0)]  # remove elements with zero probability
     if GLOBAL_DEBUG:
         print(f"{original_rows_count-len(df)} words with 0 weight removed from the list")
-    df = df.sample(frac=1, weights='weights').reset_index(drop=True)  # random order
-    regex = input("Enter words regex []: ")
-    return df[df.word.str.contains(regex, na=False)]
+    return df.sample(frac=1, weights='weights').reset_index(drop=True)  # random order
 
 
 def create_exercise(df, word_type, stats):
@@ -136,14 +152,14 @@ def create_exercise(df, word_type, stats):
     if word_type == 'Irregular':
         df = df.loc[get_irregular_verbs()]
 
+    word_length_str = input("Enter maximum word length [unlimited]: ")
+    if word_length_str:
+        df = df.loc[df['word'].str.len() <= int(word_length_str)]
+
     if mode == 'group':
         df = create_word_groups(df, stats)
     else:  # plain
         df = create_word_plain(df, stats)
-
-    word_length_str = input("Enter maximum word length [unlimited]: ")
-    if word_length_str:
-        df = df.loc[df['word'].str.len() <= int(word_length_str)]
 
     if len(df.index) > DEFAULT_EXERCISE_SIZE:
         exercise_size = input(f"Enter size of exercise: "

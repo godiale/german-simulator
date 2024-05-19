@@ -38,7 +38,7 @@ def read_words_from_file(sheet):
         case 'Substantive':
             usecols = 'B,D,E,F'
             columns = ['word', 'translation', 'article', 'plural']
-        case 'Adverb':
+        case 'Adverb' | 'Adjektiv':
             usecols = 'B,D'
             columns = ['word', 'translation']
         case _:
@@ -100,6 +100,7 @@ def frequency_fails_weight_func(stat):
 WEIGHT_FUNC = frequency_fails_weight_func
 
 
+# noinspection PyUnusedLocal
 def create_word_groups(df, stats):
     r2v = defaultdict(list)
     for v in df.word.tolist():
@@ -182,7 +183,7 @@ def init_voice_engine():
 def main():
     voice_engine = init_voice_engine()
 
-    word_type = input("Enter type ([V]erb|[I]rregular|[S]ubstantive|[A]dverb) [Verb]: ")
+    word_type = input("Enter type ([V]erb|[I]rregular|[S]ubstantive|[A]dverb)|Ad[J]eckiv [Verb]: ")
     match word_type:
         case '' | 'V':
             word_type = 'Verb'
@@ -192,6 +193,8 @@ def main():
             word_type = 'Substantive'
         case 'A':
             word_type = 'Adverb'
+        case 'J':
+            word_type = 'Adjektiv'
 
     check_forms = False
     if word_type in ('Verb', 'Irregular'):
